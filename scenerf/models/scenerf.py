@@ -428,7 +428,7 @@ class scenerf(pl.LightningModule):
             depth_rendereds.append(ret['depth'])
             gaussian_means.append(ret['gaussian_means'])
             gaussian_stds.append(ret['gaussian_stds'])
-            weights_at_depth.append(ret['weights_at_depth'])
+            weights_at_depth.append(ret['weights_at_depth'].reshape(-1))
             closest_pts_to_depths.append(ret['closest_pts_to_depth'])
             loss_kl.append(ret['loss_kl'])
             densities.append(ret['density'])

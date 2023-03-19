@@ -2,6 +2,7 @@ from scenerf.data.semantic_kitti.kitti_dm import KittiDataModule
 from tqdm import tqdm
 import os
 import click
+import open3d as o3d
 import torch
 import imageio
 from PIL import Image
@@ -72,18 +73,20 @@ def main(
                 tsdf_save_dir = os.path.join(recon_save_dir, "tsdf", sequence)        
                 depth_save_dir = os.path.join(recon_save_dir, "depth", sequence)
                 render_rgb_save_dir = os.path.join(recon_save_dir, "render_rgb", sequence)
+                mesh_save_dir = os.path.join(recon_save_dir, "mesh", sequence)
                 os.makedirs(tsdf_save_dir, exist_ok=True)                
+                os.makedirs(mesh_save_dir, exist_ok=True)
 
                 cam_K = batch["cam_K"][i].detach().cpu().numpy()
                 T_velo2cam = batch["T_velo_2_cam"][i].detach().cpu().numpy()
 
                
                 tsdf_save_path = os.path.join(tsdf_save_dir, frame_id + ".npy")
-                if os.path.exists(tsdf_save_path):
-                    print("Existed", tsdf_save_path)
-                    continue
+                mesh_save_path = os.path.join(mesh_save_dir, frame_id + ".ply")
+                # if os.path.exists(tsdf_save_path):
+                #     print("Existed", tsdf_save_path)
+                #     continue
 
-                
                 scene_size = (51.2, 51.2, 6.4)
                 vox_origin = np.array([0, -25.6, -2])
                 vol_bnds = np.zeros((3,2))
@@ -102,14 +105,57 @@ def main(
 
                     tsdf_vol.integrate(rgb, depth, cam_K, np.linalg.inv(T_velo2cam) @ rel_pose, obs_weight=1.)
                     
-                
                 tsdf_grid, _ = tsdf_vol.get_volume()
-                verts, faces, norms, colors = tsdf_vol.get_mesh()
-                
-                
                 np.save(tsdf_save_path, tsdf_grid)
                 print("saved to", tsdf_save_path)
 
+                # visualize(tsdf_vol)
+                save_mesh(mesh_save_path, tsdf_vol)
+                import ipdb; ipdb.set_trace()
+
+
+def get_o3d_mesh(tsdf_vol):
+    verts, faces, norms, colors = tsdf_vol.get_mesh()
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.triangle_normals = o3d.utility.Vector3dVector(norms)
+    mesh.vertices = o3d.utility.Vector3dVector(verts)
+    mesh.triangles = o3d.utility.Vector3iVector(faces)
+    mesh.vertex_colors = o3d.utility.Vector3dVector(colors.astype(np.float) / 255.0)
+    return mesh
+
+
+def visualize_mesh(tsdf_vol):
+    mesh = get_o3d_mesh(tsdf_vol)
+    o3d.visualization.draw_geometries([mesh])
+
+
+def get_o3d_point_cloud(tsdf_vol):
+    verts, colors = tsdf_vol.get_point_cloud()
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(verts)
+    pcd.colors = o3d.utility.Vector3dVector(colors.astype(np.float64) / 255)
+    return pcd
+
+
+def visualize_point_cloud(tsdf_vol):
+    pcd = get_o3d_point_cloud(tsdf_vol)
+    o3d.visualization.draw_geometries([pcd])
+
+
+def visualize_voxel(tsdf_vol, from_point_cloud=True):
+    if from_point_cloud:
+        pcd = get_o3d_point_cloud(tsdf_vol)
+        voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd, voxel_size=0.15)
+    else:
+        mesh = get_o3d_mesh(tsdf_vol)
+        voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(mesh, voxel_size=0.05)
+    o3d.visualization.draw_geometries([voxel_grid])
+
+
+def save_mesh(filename, tsdf_vol):
+    verts, faces, norms, colors = tsdf_vol.get_mesh()
+    fusion.meshwrite(filename, verts, faces, norms, colors)
         
+
 if __name__ == "__main__":
     main()

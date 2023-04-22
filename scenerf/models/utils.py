@@ -212,6 +212,7 @@ def sample_feats_2d(x_rgb, projected_pix, img_size=(1220, 370)):
     x_rgb: (d, 370, 1220)
     projected_pix: (N, 2)
     """
+    import ipdb; ipdb.set_trace()
     projected_pix = (projected_pix / torch.tensor(img_size).type_as(projected_pix).reshape(1, 2)) * 2 - 1
     projected_pix = projected_pix.reshape(1, 1, -1, 2)
     feats_2d = F.grid_sample(

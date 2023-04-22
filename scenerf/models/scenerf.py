@@ -247,7 +247,6 @@ class scenerf(pl.LightningModule):
                               T_cam2velo,
                               step_type):
 
-
         xs = torch.arange(start=0, end=self.img_size[0], step=2).type_as(cam_K)
         ys = torch.arange(start=0, end=self.img_size[1], step=2).type_as(cam_K)
         grid_x, grid_y = torch.meshgrid(xs, ys)
@@ -504,6 +503,7 @@ class scenerf(pl.LightningModule):
         cam_pts, x_rgb, 
         # x_sphere, 
         cam_K, T_cam2velo, viewdir, output_type="density"):
+        import ipdb; ipdb.set_trace()
         saved_shape = cam_pts.shape
         # print(cam_pts.shape)
         cam_pts = cam_pts.reshape(-1, 3)
@@ -647,6 +647,7 @@ class scenerf(pl.LightningModule):
             depth_volume = depth_volume_gauss
             sensor_distance = sensor_distance_gauss
 
+        import ipdb; ipdb.set_trace()
         sorted_indices = torch.argsort(sensor_distance, dim=1)
 
         sensor_distance = torch.gather(

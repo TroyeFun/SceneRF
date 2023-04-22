@@ -52,6 +52,7 @@ def main(
 
     with torch.no_grad():
         for batch in tqdm(data_loader):
+            import ipdb; ipdb.set_trace()
    
             batch["cam_K"] = batch["cam_K"].cuda()
             batch["T_velo_2_cam"] = batch["T_velo_2_cam"].cuda()
@@ -97,9 +98,9 @@ def main(
                     render_rgb_filepath = os.path.join(render_rgb_save_dir,
                                                 "{}_{}_{}.png".format(frame_id, step, angle))
                     print(depth_visual_filepath)
-                    if os.path.exists(depth_filepath) and os.path.exists(depth_visual_filepath) and os.path.exists(render_rgb_filepath):
-                        print("existed")
-                        continue
+                    # if os.path.exists(depth_filepath) and os.path.exists(depth_visual_filepath) and os.path.exists(render_rgb_filepath):
+                    #     print("existed")
+                    #     continue
                     
                     img_size = (1220, 370)
                     xs = torch.arange(start=0, end=img_size[0], step=scale).type_as(cam_K)
